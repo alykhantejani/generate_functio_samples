@@ -9,7 +9,5 @@ We can plot 15 samples using this equation, with added jitter of `+/- 0.5`. We c
 python generate_function_samples.py --function '(2.5*x - (2.5*x**3)/6 + (2.5*x**5)/120)' --jitter 0.5 --samples 15 --draw_true_function
 
 ```
-
 Which will produce the following plot:
-
-![](https://github.com/alykhantejani/generate_function_samples/raw/master/src/example_output.png "Output")
+<center><img src ="https://github.com/alykhantejani/generate_function_samples/blob/master/example_output.png"/></center>
