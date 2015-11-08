@@ -15,12 +15,14 @@ def plot_2d(samples_ranges, sample_values, true_values, true_values_ranges):
 
 	subplot.set_xlabel(keys[0])
 
-	subplot.set_xlim(min(samples_ranges[keys[0]]), max(samples_ranges[keys[0]]))
+	subplot.set_xlim([min(samples_ranges[keys[0]]), max(samples_ranges[keys[0]])])
 	subplot.set_ylim([min(samples), max(samples)])
 
 	subplot.plot(samples_ranges[keys[0]], samples, 'bo', clip_on = False)
 
 	if true_values is  not None:
+			subplot.set_xlim([min(min(true_values_ranges[keys[0]]), subplot.get_xlim()[0]), max(max(true_values_ranges[keys[0]]), subplot.get_xlim()[1])])
+			subplot.set_ylim([min(min(true_values), subplot.get_ylim()[0]) ,max(max(true_values), subplot.get_ylim()[1])])
 			subplot.plot(true_values_ranges[true_values_ranges.keys()[0]], true_values, 'r-', alpha = 0.2)
 
 	return subplot
@@ -34,13 +36,17 @@ def plot_3d(samples_ranges, sample_values, true_values, true_values_ranges):
 	subplot.set_xlabel(keys[0])
 	subplot.set_ylabel(keys[1])
 
-	subplot.set_xlim(min(samples_ranges[keys[0]]), max(samples_ranges[keys[0]]))
-	subplot.set_ylim(min(samples_ranges[keys[0]]), max(samples_ranges[keys[0]]))
+	subplot.set_xlim([min(samples_ranges[keys[0]]), max(samples_ranges[keys[0]])])
+	subplot.set_ylim([min(samples_ranges[keys[0]]), max(samples_ranges[keys[0]])])
 	subplot.set_zlim([min(samples), max(samples)])
 
 	subplot.plot(samples_ranges[keys[0]], samples_ranges[keys[1]], samples, 'bo', clip_on = False)
 
 	if true_values is  not None:
+		subplot.set_xlim([min(min(true_values_ranges[keys[0]]), subplot.get_xlim()[0]), max(max(true_values_ranges[keys[0]]), subplot.get_xlim()[1])])
+		subplot.set_ylim([min(min(true_values_ranges[keys[0]]), subplot.get_ylim()[0]), max(max(true_values_ranges[keys[0]]), subplot.get_ylim()[1])])
+		subplot.set_zlim([min(min(true_values), subplot.get_zlim()[0]), max(max(true_values), subplot.get_zlim()[1])])
+
 		subplot.plot(true_values_ranges[true_values_ranges.keys()[0]], true_values_ranges[true_values_ranges.keys()[1]], true_values, 'r-', alpha = 0.2)
 
 	return subplot
