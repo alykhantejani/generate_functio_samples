@@ -23,7 +23,7 @@ def plot_2d(samples_ranges, sample_values, true_values, true_values_ranges):
 	if true_values is  not None:
 			subplot.set_xlim([min(min(true_values_ranges[keys[0]]), subplot.get_xlim()[0]), max(max(true_values_ranges[keys[0]]), subplot.get_xlim()[1])])
 			subplot.set_ylim([min(min(true_values), subplot.get_ylim()[0]) ,max(max(true_values), subplot.get_ylim()[1])])
-			subplot.plot(true_values_ranges[true_values_ranges.keys()[0]], true_values, 'r-', alpha = 0.2)
+			subplot.plot(true_values_ranges[true_values_ranges.keys()[0]], true_values, 'r-', alpha = 0.35)
 
 	return subplot
 
@@ -54,7 +54,7 @@ def plot_3d(samples_ranges, sample_values, f):
 		error = np.array([ne.evaluate(f, local_dict = {keys[0] : a, keys[1]: b}) for a, b in zip(np.ravel(X), np.ravel(X1))])
 		Error = error.reshape(X.shape)
 
-		subplot.plot_surface(X, X1, Error, cmap = 'gist_rainbow_r', alpha = 0.2)
+		subplot.plot_surface(X, X1, Error, cmap = 'gist_rainbow_r', alpha = 0.35)
 
 	return subplot
 
