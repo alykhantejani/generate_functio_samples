@@ -27,7 +27,7 @@ def plot_2d(samples_ranges, sample_values, true_values, true_values_ranges):
 
 	return subplot
 
-def plot_3d(samples_ranges, sample_values, true_values, true_values_ranges):
+def plot_3d(samples_ranges, sample_values, f):
 	fig = plt.figure()
 	subplot = fig.add_subplot(111, projection = '3d')
 	
@@ -42,12 +42,19 @@ def plot_3d(samples_ranges, sample_values, true_values, true_values_ranges):
 
 	subplot.plot(samples_ranges[keys[0]], samples_ranges[keys[1]], samples, 'bo', clip_on = False)
 
-	if true_values is  not None:
-		subplot.set_xlim([min(min(true_values_ranges[keys[0]]), subplot.get_xlim()[0]), max(max(true_values_ranges[keys[0]]), subplot.get_xlim()[1])])
-		subplot.set_ylim([min(min(true_values_ranges[keys[0]]), subplot.get_ylim()[0]), max(max(true_values_ranges[keys[0]]), subplot.get_ylim()[1])])
-		subplot.set_zlim([min(min(true_values), subplot.get_zlim()[0]), max(max(true_values), subplot.get_zlim()[1])])
+	if f is not None:
+		x = x1 = None
 
-		subplot.plot(true_values_ranges[true_values_ranges.keys()[0]], true_values_ranges[true_values_ranges.keys()[1]], true_values, 'r-', alpha = 0.2)
+		low = min(min(samples_ranges[keys[0]]), min(samples_ranges[keys[1]]))
+		high = max(max(samples_ranges[keys[0]]), max(samples_ranges[keys[1]]))
+		x = x1 = np.arange(low, high, 0.05)
+
+		X, X1 = np.meshgrid(x, x1)
+
+		error = np.array([ne.evaluate(f, local_dict = {keys[0] : a, keys[1]: b}) for a, b in zip(np.ravel(X), np.ravel(X1))])
+		Error = error.reshape(X.shape)
+
+		subplot.plot_surface(X, X1, Error, cmap = 'gist_rainbow_r', alpha = 0.2)
 
 	return subplot
 
@@ -72,6 +79,7 @@ num_samples = args.num_samples
 variable_ranges = args.variable_ranges
 
 assert len(variable_ranges) > 0 and len(variable_ranges) <= 2, 'Can only plot 2D or 3D graphs'
+plot2d = len(variable_ranges) == 1
 
 samples_eval_ranges = {}
 for key in variable_ranges:
@@ -84,22 +92,18 @@ samples = ne.evaluate(f, local_dict = samples_eval_ranges)
 for i in xrange(0, len(samples)):
 	samples[i] = samples[i] + random.uniform(-jitter, jitter) 
 
-true_values = None
-true_eval_ranges = None
-if args.draw_true_function:
-	true_eval_ranges = {}
-
-	for key in variable_ranges:
-		true_eval_ranges[key] = np.linspace(variable_ranges[key][0], variable_ranges[key][1], 100)
-
-	true_values = ne.evaluate(f, local_dict = true_eval_ranges)
-
 subplot = None
-if len(variable_ranges) == 1:
+if plot2d:
+	true_values = None
+	true_eval_ranges = None
+	if args.draw_true_function:
+		true_eval_ranges = {key: np.linspace(variable_ranges[key][0], variable_ranges[key][1], 100)}
+		true_values = ne.evaluate(f, local_dict = true_eval_ranges)
+
 	subplot = plot_2d(samples_eval_ranges, samples, true_values, true_eval_ranges)
 	subplot.set_ylabel(args.function_output_name)
 else:
-	subplot = plot_3d(samples_eval_ranges, samples, true_values, true_eval_ranges)
+	subplot = plot_3d(samples_eval_ranges, samples, f)
 	subplot.set_zlabel(args.function_output_name)
 
 subplot.set_title(args.title)
