@@ -6,7 +6,7 @@ import numexpr as ne
 import argparse
 import json
 
-def plot_2d(samples_ranges, sample_values, true_values, true_values_ranges):
+def plot_2d(samples_ranges, sample_values, true_values, true_values_ranges, alpha = 0.35):
 	fig = plt.figure()
 	
 	keys = samples_ranges.keys()
@@ -23,11 +23,11 @@ def plot_2d(samples_ranges, sample_values, true_values, true_values_ranges):
 	if true_values is  not None:
 			subplot.set_xlim([min(min(true_values_ranges[keys[0]]), subplot.get_xlim()[0]), max(max(true_values_ranges[keys[0]]), subplot.get_xlim()[1])])
 			subplot.set_ylim([min(min(true_values), subplot.get_ylim()[0]) ,max(max(true_values), subplot.get_ylim()[1])])
-			subplot.plot(true_values_ranges[true_values_ranges.keys()[0]], true_values, 'r-', alpha = 0.35)
+			subplot.plot(true_values_ranges[true_values_ranges.keys()[0]], true_values, 'r-', alpha)
 
 	return subplot
 
-def plot_3d(samples_ranges, sample_values, f):
+def plot_3d(samples_ranges, sample_values, f, cmap = 'gist_rainbow_r', alpha = 0.35):
 	fig = plt.figure()
 	subplot = fig.add_subplot(111, projection = '3d')
 	
@@ -54,7 +54,7 @@ def plot_3d(samples_ranges, sample_values, f):
 		error = np.array([ne.evaluate(f, local_dict = {keys[0] : a, keys[1]: b}) for a, b in zip(np.ravel(X), np.ravel(X1))])
 		Error = error.reshape(X.shape)
 
-		subplot.plot_surface(X, X1, Error, cmap = 'gist_rainbow_r', alpha = 0.35)
+		subplot.plot_surface(X, X1, Error, cmap = cmap, alpha = alpha)
 
 	return subplot
 
@@ -67,8 +67,11 @@ parser.add_argument('--samples_out_file', type = str, default = None, help = 'Fi
 parser.add_argument('--jitter', type = float, default = 0.5, help = 'jitter range +/- [jitter]')
 parser.add_argument('--num_samples', type = int, default = 15, help = 'number of samples to generate')
 parser.add_argument('--draw_true_function', action='store_true')
+parser.add_argument('--alpha', type = float, default = 0.35, help = 'Alpha for plotting true graph (0 = transparent, 1 = opaque)')
+parser.add_argument('--cmap', type = str, default = 'gist_rainbow_r', help = 'cmap to use for 3d surfaces')
 parser.add_argument('--title', type = str, default = '')
 parser.add_argument('--display', action = 'store_true', help = 'Display live interactive visualization')
+
 
 args = parser.parse_args()
 
@@ -77,6 +80,7 @@ plot_out_file = args.plot_out_file
 samples_out_file = args.samples_out_file
 num_samples = args.num_samples
 variable_ranges = args.variable_ranges
+
 
 assert len(variable_ranges) > 0 and len(variable_ranges) <= 2, 'Can only plot 2D or 3D graphs'
 plot2d = len(variable_ranges) == 1
@@ -100,10 +104,10 @@ if plot2d:
 		true_eval_ranges = {key: np.linspace(variable_ranges[key][0], variable_ranges[key][1], 100)}
 		true_values = ne.evaluate(f, local_dict = true_eval_ranges)
 
-	subplot = plot_2d(samples_eval_ranges, samples, true_values, true_eval_ranges)
+	subplot = plot_2d(samples_eval_ranges, samples, true_values, true_eval_ranges, alpha = args.alpha)
 	subplot.set_ylabel(args.function_output_name)
 else:
-	subplot = plot_3d(samples_eval_ranges, samples, f)
+	subplot = plot_3d(samples_eval_ranges, samples, f, alpha = args.alpha, cmap = args.cmap)
 	subplot.set_zlabel(args.function_output_name)
 
 subplot.set_title(args.title)
