@@ -5,58 +5,94 @@ import random
 import numexpr as ne
 import argparse
 import json
+import math
+import random
 
-def plot_2d(samples_ranges, sample_values, true_values, true_values_ranges, alpha = 0.35):
+def plot_2d(variable_ranges, f, num_samples, jitter = 0, draw_true_function = False, alpha = 0.35):
 	fig = plt.figure()
-	
-	keys = samples_ranges.keys()
-
 	subplot = fig.add_subplot(111)
 
-	subplot.set_xlabel(keys[0])
+	samples_ranges = {}
+	key = variable_ranges.keys()[0]
+	
+	range_to_sample = np.linspace(variable_ranges[key][0], variable_ranges[key][1], num_samples * 5)
+	samples_ranges[key] = random.sample(set(range_to_sample), num_samples)
+	#plot initial data
+	samples = ne.evaluate(f, local_dict = samples_ranges)
+	
+	if jitter != 0:
+		for i in xrange(0, len(samples)):
+			samples[i] = samples[i] + random.uniform(-jitter, jitter) 
 
-	subplot.set_xlim([min(samples_ranges[keys[0]]), max(samples_ranges[keys[0]])])
+	subplot.set_xlim([min(samples_ranges[key]), max(samples_ranges[key])])
 	subplot.set_ylim([min(samples), max(samples)])
 
-	subplot.plot(samples_ranges[keys[0]], samples, 'bo', clip_on = False)
+	subplot.set_xlabel(key)
+	subplot.plot(samples_ranges[key], samples, 'bo', clip_on = False)
 
-	if true_values is  not None:
-			subplot.set_xlim([min(min(true_values_ranges[keys[0]]), subplot.get_xlim()[0]), max(max(true_values_ranges[keys[0]]), subplot.get_xlim()[1])])
-			subplot.set_ylim([min(min(true_values), subplot.get_ylim()[0]) ,max(max(true_values), subplot.get_ylim()[1])])
-			subplot.plot(true_values_ranges[true_values_ranges.keys()[0]], true_values, 'r-', alpha)
+	if draw_true_function:
+		true_eval_ranges = {key: np.linspace(variable_ranges[key][0], variable_ranges[key][1], 100)}
+		true_values = ne.evaluate(f, local_dict = true_eval_ranges)
+		subplot.set_xlim([min(min(true_eval_ranges[key]), subplot.get_xlim()[0]), max(max(true_eval_ranges[key]), subplot.get_xlim()[1])])
+		subplot.set_ylim([min(min(true_values), subplot.get_ylim()[0]) ,max(max(true_values), subplot.get_ylim()[1])])
+		subplot.plot(true_eval_ranges[true_eval_ranges.keys()[0]], true_values, 'r-', alpha = alpha)
 
 	return subplot
 
-def plot_3d(samples_ranges, sample_values, f, cmap = 'gist_rainbow_r', alpha = 0.35):
+
+def plot_3d(variable_ranges, f, num_samples, jitter = 0, draw_true_function = False, alpha = 0.35, cmap = 'gist_rainbow_r'):
+	assert (math.sqrt(num_samples)).is_integer(), "Please ensure sqrt(num_samples) is an integer"
+
 	fig = plt.figure()
 	subplot = fig.add_subplot(111, projection = '3d')
 	
-	keys = samples_ranges.keys()
+	dimension_step = int(math.sqrt(num_samples))
+	
+	x_key = variable_ranges.keys()[0]
+	x1_key = variable_ranges.keys()[1]
+	x_ranges = random.sample(set(np.linspace(variable_ranges[x_key][0], variable_ranges[x_key][1], dimension_step * 3)), dimension_step)
+	x1_ranges = random.sample(set(np.linspace(variable_ranges[x1_key][0], variable_ranges[x1_key][1], dimension_step * 3)), dimension_step)
 
-	subplot.set_xlabel(keys[0])
-	subplot.set_ylabel(keys[1])
+	samples_ranges = {x_key : [], x1_key: []}
 
-	subplot.set_xlim([min(samples_ranges[keys[0]]), max(samples_ranges[keys[0]])])
-	subplot.set_ylim([min(samples_ranges[keys[0]]), max(samples_ranges[keys[0]])])
+	for i in range(0, dimension_step):
+		for j in range(0, dimension_step):
+			samples_ranges[x_key].append(x_ranges[i])
+			samples_ranges[x1_key].append(x1_ranges[j])
+
+
+	samples = ne.evaluate(f, local_dict = samples_ranges)
+
+	if jitter != 0 :
+		for i in xrange(0, len(samples)):
+			samples[i] = samples[i] + random.uniform(-jitter, jitter) 
+	
+	subplot.set_xlabel(x_key)
+	subplot.set_ylabel(x1_key)
+
+	subplot.set_xlim([min(variable_ranges[x_key]), max(variable_ranges[x_key])])
+	subplot.set_ylim([min(variable_ranges[x1_key]), max(variable_ranges[x1_key])])
 	subplot.set_zlim([min(samples), max(samples)])
 
-	subplot.plot(samples_ranges[keys[0]], samples_ranges[keys[1]], samples, 'bo', clip_on = False)
+	subplot.plot(samples_ranges[x_key], samples_ranges[x1_key], samples, 'bo', clip_on = False)
 
-	if f is not None:
+	if draw_true_function:
 		x = x1 = None
 
-		low = min(min(samples_ranges[keys[0]]), min(samples_ranges[keys[1]]))
-		high = max(max(samples_ranges[keys[0]]), max(samples_ranges[keys[1]]))
+		low = min(min(variable_ranges[x_key]), min(variable_ranges[x1_key]))
+		high = max(max(variable_ranges[x_key]), max(variable_ranges[x1_key]))
 		x = x1 = np.arange(low, high, 0.05)
-
 		X, X1 = np.meshgrid(x, x1)
 
-		error = np.array([ne.evaluate(f, local_dict = {keys[0] : a, keys[1]: b}) for a, b in zip(np.ravel(X), np.ravel(X1))])
+		error = np.array([ne.evaluate(f, local_dict = {x_key : a, x1_key: b}) for a, b in zip(np.ravel(X), np.ravel(X1))])
 		Error = error.reshape(X.shape)
 
 		subplot.plot_surface(X, X1, Error, cmap = cmap, alpha = alpha)
 
+
 	return subplot
+
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--function', type = str, required = True, help = 'function to plot expressed in terms of variables in variable map')
@@ -81,40 +117,23 @@ samples_out_file = args.samples_out_file
 num_samples = args.num_samples
 variable_ranges = args.variable_ranges
 
-
 assert len(variable_ranges) > 0 and len(variable_ranges) <= 2, 'Can only plot 2D or 3D graphs'
-plot2d = len(variable_ranges) == 1
-
-samples_eval_ranges = {}
-for key in variable_ranges:
-	samples_eval_ranges[key] = np.linspace(variable_ranges[key][0], variable_ranges[key][1], num_samples)
 
 f = args.function
-#plot initial data
-samples = ne.evaluate(f, local_dict = samples_eval_ranges)
-
-for i in xrange(0, len(samples)):
-	samples[i] = samples[i] + random.uniform(-jitter, jitter) 
 
 subplot = None
-if plot2d:
-	true_values = None
-	true_eval_ranges = None
-	if args.draw_true_function:
-		true_eval_ranges = {key: np.linspace(variable_ranges[key][0], variable_ranges[key][1], 100)}
-		true_values = ne.evaluate(f, local_dict = true_eval_ranges)
 
-	subplot = plot_2d(samples_eval_ranges, samples, true_values, true_eval_ranges, alpha = args.alpha)
+if len(variable_ranges) == 1:
+	subplot = plot_2d(variable_ranges, f, num_samples, jitter = jitter, draw_true_function = args.draw_true_function, alpha = args.alpha)
 	subplot.set_ylabel(args.function_output_name)
 else:
-	subplot = plot_3d(samples_eval_ranges, samples, f, alpha = args.alpha, cmap = args.cmap)
+	subplot = plot_3d(variable_ranges, f, num_samples, jitter = jitter, draw_true_function = args.draw_true_function, alpha = args.alpha)
 	subplot.set_zlabel(args.function_output_name)
 
 subplot.set_title(args.title)
-
 subplot.grid()
 
-if samples_out_file:
+if samples_out_file is not None:
 	print('saving samples to ' + samples_out_file)
 	out = {'out_values': samples}
 	for k in samples_eval_ranges:
@@ -122,7 +141,8 @@ if samples_out_file:
 
 	np.save(samples_out_file, out)
 
-if plot_out_file:
+
+if plot_out_file is not None:
 	print('saving plot to ' + plot_out_file)
 	plt.savefig(plot_out_file)
 
