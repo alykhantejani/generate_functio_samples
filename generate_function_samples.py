@@ -37,7 +37,7 @@ def plot_2d(variable_ranges, f, num_samples, jitter = 0, draw_true_function = Fa
 		subplot.set_ylim([min(min(true_values), subplot.get_ylim()[0]) ,max(max(true_values), subplot.get_ylim()[1])])
 		subplot.plot(true_eval_ranges[true_eval_ranges.keys()[0]], true_values, 'r-', alpha = alpha)
 
-	return subplot
+	return subplot, samples
 
 
 def plot_3d(variable_ranges, f, num_samples, jitter = 0, draw_true_function = False, alpha = 0.35, cmap = 'gist_rainbow_r'):
@@ -90,7 +90,7 @@ def plot_3d(variable_ranges, f, num_samples, jitter = 0, draw_true_function = Fa
 		subplot.plot_surface(X, X1, Error, cmap = cmap, alpha = alpha)
 
 
-	return subplot
+	return subplot, samples
 
 
 
@@ -121,13 +121,13 @@ assert len(variable_ranges) > 0 and len(variable_ranges) <= 2, 'Can only plot 2D
 
 f = args.function
 
-subplot = None
+subplot, samples = None, []
 
 if len(variable_ranges) == 1:
-	subplot = plot_2d(variable_ranges, f, num_samples, jitter = jitter, draw_true_function = args.draw_true_function, alpha = args.alpha)
+	subplot, samples = plot_2d(variable_ranges, f, num_samples, jitter = jitter, draw_true_function = args.draw_true_function, alpha = args.alpha)
 	subplot.set_ylabel(args.function_output_name)
 else:
-	subplot = plot_3d(variable_ranges, f, num_samples, jitter = jitter, draw_true_function = args.draw_true_function, alpha = args.alpha)
+	subplot, samples = plot_3d(variable_ranges, f, num_samples, jitter = jitter, draw_true_function = args.draw_true_function, alpha = args.alpha)
 	subplot.set_zlabel(args.function_output_name)
 
 subplot.set_title(args.title)
@@ -135,12 +135,7 @@ subplot.grid()
 
 if samples_out_file is not None:
 	print('saving samples to ' + samples_out_file)
-	out = {'out_values': samples}
-	for k in samples_eval_ranges:
-		out[k] = samples_eval_ranges[k]
-
-	np.save(samples_out_file, out)
-
+	np.save(samples_out_file, samples)
 
 if plot_out_file is not None:
 	print('saving plot to ' + plot_out_file)
